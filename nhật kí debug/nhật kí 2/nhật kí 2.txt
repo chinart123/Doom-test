@@ -1,0 +1,48 @@
+# NHẬT KÝ DỰ ÁN: EDU DOOM ASS - LOG #2
+## GIAI ĐOẠN 2: NÂNG CẤP CODE, ĐÓNG GÓI KIT VÀ TEST CÀI ĐẶT BẢO MẬT
+
+Giai đoạn này tập trung vào việc "độ" code lên Nấc 1A (OpenGL, Âm thanh), nén toàn bộ vào file `kit-v2.1.0.zip`, lấy mã băm SHA256 bảo mật và test file `setup_env.bat` tự động cài đặt.
+
+### 1. NÂNG CẤP MÃ NGUỒN (NẤC 1A)
+- **`Makefile.win`:** Thêm `-O3 -march=znver3 -mtune=znver3` (tối ưu chip Ryzen) và `-lopengl32`.
+- **`doomgeneric_sdl.c`:** Thay SDL_Renderer bằng OpenGL Context, bật VSync, thêm phím F5 đổi bộ lọc (Nearest/Linear).
+
+### 2. QUY TRÌNH LẤY MÃ HASH `KIT_SHA256` (POWERSHELL)
+Mã Hash là "dấu vân tay" của file nén, đóng vai trò "người gác cổng" chống mã độc.
+
+**Bước 2.1: Nén Kit và tính Hash (chạy tại thư mục gốc dự án)**
+```powershell
+$version = "2.1.0"
+$kitDir = Join-Path (Get-Location) "kit"
+$outZip = Join-Path (Get-Location) "kit-v$version.zip"
+
+if (Test-Path $outZip) { Remove-Item -Path $outZip -Force }
+Compress-Archive -Path "$kitDir\*" -DestinationPath $outZip -Force
+
+# In ra mã Hash
+$hash = (Get-FileHash -Path $outZip -Algorithm SHA256).Hash.ToLower()
+Write-Host "KIT_SHA256=$hash" -ForegroundColor Yellow
+```
+*(Mã hash hiện tại của dự án: `6489ca3e2fda0e83ad7536bf666592f4dd13e6a2ff62ae4ff607cb54167cb08a`)*
+
+### 3. QUY TRÌNH TEST CÀI ĐẶT TỰ ĐỘNG (SETUP_ENV.BAT)
+**Bối cảnh:** Giả lập cấu trúc thư mục cài đặt do người dùng tạo:
+`E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\build_kit.ps1\`
+
+**Bước 3.1: Chuẩn bị file**
+- Copy `setup_env.bat` và `kit-v2.1.0.zip` vào thư mục trên.
+- Mở `setup_env.bat`, cấu hình lại 2 dòng:
+  `set KIT_URL=file:///E:/Workspace/Doom/v2.1.0-Level-1A/test/_tool/build_kit.ps1/kit-v2.1.0.zip`
+  `set KIT_SHA256=6489ca3e2fda0e83ad7536bf666592f4dd13e6a2ff62ae4ff607cb54167cb08a`
+
+**Bước 3.2: Chạy file `.bat`**
+Click đúp `setup_env.bat`. Quy trình tự động diễn ra:
+1. Kiểm tra SHA256 (nếu sai sẽ báo đỏ và dừng ngay).
+2. Dùng lệnh `tar -xf` giải nén zip vào `.download_cache\kit-v2.1.0\`.
+3. Copy đè (overlay) `doomgeneric_sdl.c` và `Makefile.win` vào thư mục dự án.
+4. Gọi script `install_docs.ps1` để cập nhật tài liệu.
+
+### 4. BÀI HỌC KINH NGHIỆM
+- **Lỗi SHA256 KHÔNG KHỚP:** Do chưa dán mã Hash vào file `.bat`, hoặc file `.zip` bị hỏng trong quá trình copy.
+- **Lỗi "Could not find a part of the path":** Do gõ sai đường dẫn trong `KIT_URL` (ví dụ: thiếu dấu gạch dưới `_` trong tên thư mục `_tool`).
+- **Lưu ý về tên thư mục:** Việc đặt tên thư mục giống tên file (như `build_kit.ps1`) Windows vẫn chấp nhận, nhưng cần cực kỳ cẩn thận khi gõ lệnh `cd` hoặc đường dẫn.

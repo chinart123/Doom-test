@@ -1,0 +1,21 @@
+=======================================================
+EDU DOOM ASS - BUILD INFO
+=======================================================
+Date/Time  : Sat 11/14/2026  5:29:46.46
+Version    : 2.1.0
+Project Dir: E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\build_kit.ps1
+
+[Created/Extracted Directories]
+- .download_cache\kit-v2.1.0\ - Kit source
+- doomgeneric-master\ - Doom source code
+- third_party\ - SDL2 and SDL2_mixer 64-bit
+- mingw64\ - WinLibs Toolchain 64-bit
+- wads\ - DOOM1.WAD
+- assets\document\ - Markdown Documentation
+- Custom build Makefile\ - Makefile.win
+
+[Next Steps]
+1. Open Geany IDE.
+2. Press F9 to Build.
+3. Press F5 to Run.
+=======================================================

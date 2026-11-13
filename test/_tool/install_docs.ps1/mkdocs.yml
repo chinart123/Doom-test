@@ -1,0 +1,19 @@
+docs_dir: mkdocs
+site_name: EduDoom-Ass Documentation
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - search.suggest
+    - search.highlight
+markdown_extensions:
+  - tables
+  - fenced_code
+  - toc:
+      permalink: true
+
+nav:
+  - Trang chủ: README.md
+  - Quy định tài liệu: QUY_DINH_TAI_LIEU.md
+  - Bản đồ tài liệu: assets/document/README.md

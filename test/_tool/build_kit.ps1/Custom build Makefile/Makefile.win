@@ -1,0 +1,238 @@
+# ============================================================================
+# Project: EduDoom-Ass - Portable Geany & GNU Make Makefile (v2.1.0 - Level 1A)
+# Dựa trên nền tảng v2.0.3, nâng cấp các thông số sau để đạt chuẩn Nấc 1A:
+#
+# [1] TỐI ƯU HÓA VI KIẾN TRÚC (Dành riêng cho CPU Ryzen 5 5500X3D)
+#     - Cũ (v2.0.3): Chưa có cờ tối ưu hóa độ phân giải mã nguồn.
+#     - Mới (v2.1.0): Thêm `-O3 -march=znver3 -mtune=znver3` vào biến CFLAGS.
+#       -> Giúp GCC sinh mã máy tối ưu nhất cho nhân Zen 3, tận dụng 96MB L3 Cache.
+#
+# [2] KÍCH HOẠT ĐỒ HỌA PHẦN CỨNG OPENGL (Dùng cho bộ lọc hậu kỳ)
+#     - Cũ (v2.0.3): Chưa link tới thư viện OpenGL của Windows.
+#     - Mới (v2.1.0): Thêm `-lopengl32` vào cuối biến LIBS.
+#       -> Cho phép code C (doomgeneric_sdl.c) gọi các hàm OpenGL để vẽ bộ lọc.
+#
+# [3] ĐỒNG BỘ NHÃN PHIÊN BẢN TRONG CÁC CÂU LỆNH
+#     - Cũ (v2.0.3): Các thông báo echo và hộp thoại PowerShell ghi v2.0.3.
+#     - Mới (v2.1.0): Cập nhật toàn bộ thành v2.1.0 để khớp với tên thư mục đích.
+# ============================================================================
+
+SHELL = cmd.exe
+.SHELLFLAGS = /C
+export PATH := $(CURDIR)/mingw64/bin;$(CURDIR)/third_party/SDL2/bin;$(CURDIR)/third_party/SDL2_mixer/bin;$(PATH)
+JOBS ?= $(NUMBER_OF_PROCESSORS)
+ifeq ($(JOBS),)
+JOBS := 4
+endif
+
+# --- 1. Tu dong kich hoat Parallel Build da nhan (-jN) ---
+ifeq ($(findstring -j,$(MAKEFLAGS)),)
+MAKEFLAGS += -j$(if $(NUMBER_OF_PROCESSORS),$(NUMBER_OF_PROCESSORS),8)
+endif
+
+# --- 2. Cau hinh Compiler Cache (ccache.exe) ---
+export CCACHE_DIR        := .ccache
+export CCACHE_TEMPDIR    := .ccache/tmp
+export CCACHE_SLOPPINESS := time_macros,include_file_mtime,include_file_ctime
+CCACHE_BIN := $(if $(wildcard ./mingw64/bin/ccache.exe),"./mingw64/bin/ccache.exe",)
+
+# --- 3. Duong dan tuong doi noi bo ---
+MINGW          = ./mingw64
+MINGW_TARGET   = $(MINGW)/x86_64-w64-mingw32
+THIRD_PARTY    = ./third_party
+SDL2_DIR       = $(THIRD_PARTY)/SDL2
+SDL2_MIXER_DIR = $(THIRD_PARTY)/SDL2_mixer
+WAD_DIR        = ./wads
+SRC_DIR        = doomgeneric-master/doomgeneric
+OBJ_DIR        = build
+
+B_FLAGS   = -B"$(MINGW)/libexec/gcc/" \
+            -B"$(MINGW)/lib/gcc/" \
+            -B"$(MINGW_TARGET)/lib/" \
+            -B"$(MINGW_TARGET)/bin/" \
+            -B"$(SDL2_DIR)/lib/" \
+            -B"$(SDL2_DIR)/bin/" \
+            -B"$(SDL2_MIXER_DIR)/lib/" \
+            -B"$(SDL2_MIXER_DIR)/bin/" \
+            -B"$(MINGW)/lib/" \
+            -B"$(MINGW)/bin/"
+
+# --- 4. Trinh bien dich & Lien ket ---
+CC        = $(CCACHE_BIN) ".\mingw64\bin\gcc.exe" $(B_FLAGS) -pipe -fno-use-linker-plugin
+CPP       = $(CCACHE_BIN) ".\mingw64\bin\g++.exe" $(B_FLAGS) -pipe -fno-use-linker-plugin
+LD_CC     = ".\mingw64\bin\gcc.exe" $(B_FLAGS) -pipe -fno-use-linker-plugin
+WINDRES   = ".\mingw64\bin\windres.exe"
+
+# --- 5. Thu muc Header & Thu vien lien ket ---
+GCC_VER_INC := $(wildcard $(MINGW)/lib/gcc/x86_64-w64-mingw32/*/include)
+
+INCS      = -I"$(MINGW)/include" \
+            -I"$(MINGW_TARGET)/include" \
+            $(if $(GCC_VER_INC),-I"$(firstword $(GCC_VER_INC))") \
+            -I"$(SDL2_DIR)/include" \
+            -I"$(SDL2_DIR)/include/SDL2" \
+            -I"$(SDL2_MIXER_DIR)/include" \
+            -I"$(SDL2_MIXER_DIR)/include/SDL2"
+
+CXXINCS   = $(INCS)
+
+# [THAY ĐỔI 2] Thêm -lopengl32 vào cuối để link thư viện đồ họa
+LIBS      = -L"$(MINGW)/lib" \
+            -L"$(MINGW_TARGET)/lib" \
+            -L"$(SDL2_DIR)/lib" \
+            -L"$(SDL2_MIXER_DIR)/lib" \
+            -static-libgcc -mwindows \
+            -lmingw32 -lSDL2main -lSDL2 -lSDL2_mixer -lopengl32 \
+            -lgdi32 -luser32 -lwinmm
+
+# [THAY ĐỔI 1] Thêm -O3 -march=znver3 -mtune=znver3 để tối ưu cho chip Ryzen
+CFLAGS    = $(INCS) -O3 -march=znver3 -mtune=znver3 -pipe -w -fcommon -std=gnu99 -DFEATURE_SOUND -include ctype.h -Wno-error=implicit-function-declaration -Wno-error=implicit-int -Wno-error=int-conversion -Wno-error=incompatible-pointer-types
+CXXFLAGS  = $(CXXINCS) -pipe -std=gnu99
+
+BIN       = EduDoom-Ass.exe
+RM        = del /F /Q
+
+# --- 6. Danh sach tep ma nguon C ---
+SRCS = \
+  $(SRC_DIR)/am_map.c \
+  $(SRC_DIR)/d_event.c \
+  $(SRC_DIR)/d_items.c \
+  $(SRC_DIR)/d_iwad.c \
+  $(SRC_DIR)/d_loop.c \
+  $(SRC_DIR)/d_main.c \
+  $(SRC_DIR)/d_mode.c \
+  $(SRC_DIR)/d_net.c \
+  $(SRC_DIR)/doomdef.c \
+  $(SRC_DIR)/doomgeneric.c \
+  $(SRC_DIR)/doomgeneric_sdl.c \
+  $(SRC_DIR)/doomstat.c \
+  $(SRC_DIR)/dstrings.c \
+  $(SRC_DIR)/f_finale.c \
+  $(SRC_DIR)/f_wipe.c \
+  $(SRC_DIR)/g_game.c \
+  $(SRC_DIR)/gusconf.c \
+  $(SRC_DIR)/hu_lib.c \
+  $(SRC_DIR)/hu_stuff.c \
+  $(SRC_DIR)/i_cdmus.c \
+  $(SRC_DIR)/i_endoom.c \
+  $(SRC_DIR)/i_input.c \
+  $(SRC_DIR)/i_joystick.c \
+  $(SRC_DIR)/i_scale.c \
+  $(SRC_DIR)/i_sdlmusic.c \
+  $(SRC_DIR)/i_sdlsound.c \
+  $(SRC_DIR)/i_sound.c \
+  $(SRC_DIR)/i_system.c \
+  $(SRC_DIR)/i_timer.c \
+  $(SRC_DIR)/i_video.c \
+  $(SRC_DIR)/icon.c \
+  $(SRC_DIR)/info.c \
+  $(SRC_DIR)/m_argv.c \
+  $(SRC_DIR)/m_bbox.c \
+  $(SRC_DIR)/m_cheat.c \
+  $(SRC_DIR)/m_config.c \
+  $(SRC_DIR)/m_controls.c \
+  $(SRC_DIR)/m_fixed.c \
+  $(SRC_DIR)/m_menu.c \
+  $(SRC_DIR)/m_misc.c \
+  $(SRC_DIR)/m_random.c \
+  $(SRC_DIR)/memio.c \
+  $(SRC_DIR)/mus2mid.c \
+  $(SRC_DIR)/p_ceilng.c \
+  $(SRC_DIR)/p_doors.c \
+  $(SRC_DIR)/p_enemy.c \
+  $(SRC_DIR)/p_floor.c \
+  $(SRC_DIR)/p_inter.c \
+  $(SRC_DIR)/p_lights.c \
+  $(SRC_DIR)/p_map.c \
+  $(SRC_DIR)/p_maputl.c \
+  $(SRC_DIR)/p_mobj.c \
+  $(SRC_DIR)/p_plats.c \
+  $(SRC_DIR)/p_pspr.c \
+  $(SRC_DIR)/p_saveg.c \
+  $(SRC_DIR)/p_setup.c \
+  $(SRC_DIR)/p_sight.c \
+  $(SRC_DIR)/p_spec.c \
+  $(SRC_DIR)/p_switch.c \
+  $(SRC_DIR)/p_telept.c \
+  $(SRC_DIR)/p_tick.c \
+  $(SRC_DIR)/p_user.c \
+  $(SRC_DIR)/r_bsp.c \
+  $(SRC_DIR)/r_data.c \
+  $(SRC_DIR)/r_draw.c \
+  $(SRC_DIR)/r_main.c \
+  $(SRC_DIR)/r_plane.c \
+  $(SRC_DIR)/r_segs.c \
+  $(SRC_DIR)/r_sky.c \
+  $(SRC_DIR)/r_things.c \
+  $(SRC_DIR)/s_sound.c \
+  $(SRC_DIR)/sha1.c \
+  $(SRC_DIR)/sounds.c \
+  $(SRC_DIR)/st_lib.c \
+  $(SRC_DIR)/st_stuff.c \
+  $(SRC_DIR)/statdump.c \
+  $(SRC_DIR)/tables.c \
+  $(SRC_DIR)/v_video.c \
+  $(SRC_DIR)/w_checksum.c \
+  $(SRC_DIR)/w_file.c \
+  $(SRC_DIR)/w_file_stdc.c \
+  $(SRC_DIR)/w_main.c \
+  $(SRC_DIR)/w_wad.c \
+  $(SRC_DIR)/wi_stuff.c \
+  $(SRC_DIR)/z_zone.c
+
+OBJ = $(patsubst $(SRC_DIR)/%.c, $(OBJ_DIR)/%.o, $(SRCS))
+
+# --- 7. Khoa thu tu clean -> all khi chay song song ---
+ifneq ($(or $(findstring clean,$(MAKECMDGOALS)),$(findstring rebuild,$(MAKECMDGOALS))),)
+all-before $(OBJ) $(BIN): clean
+endif
+
+# --- 8. Cac muc tieu chinh ---
+.PHONY: all build rebuild run all-before all-after clean clean-custom
+
+all: all-before $(BIN) all-after
+build: all
+
+rebuild: clean all
+
+# [THAY ĐỔI 3] Cập nhật text v2.0.3 -> v2.1.0 trong các popup và echo
+run:
+	@if not exist "$(BIN)" ( \
+		echo ============================================================================ & \
+		echo [WARNING v2.1.0] Project has not been compiled/built yet ^($(BIN) not found^). & \
+		echo [WARNING v2.1.0] Waiting for user confirmation in popup dialog... & \
+		powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; $$r = [System.Windows.Forms.MessageBox]::Show('Project has not been compiled/built yet ($(BIN) not found).' + [Environment]::NewLine + [Environment]::NewLine + 'Do you want to Compile/Build the project now?', 'EduDoom-Ass v2.1.0 - Project Not Built', [System.Windows.Forms.MessageBoxButtons]::YesNo, [System.Windows.Forms.MessageBoxIcon]::Question, [System.Windows.Forms.MessageBoxDefaultButton]::Button1, [System.Windows.Forms.MessageBoxOptions]::DefaultDesktopOnly); if ($$r -eq 'Yes') { exit 0 } else { exit 1 }" && ( \
+			echo [RUN GAME v2.1.0] User selected YES -^> Compiling/Building project ^(-j$(JOBS)^)... & \
+			"$(MAKE)" --no-print-directory -j$(JOBS) -f "Custom build Makefile/Makefile.win" build || exit /b 1 \
+		) || ( \
+			echo [CANCELLED v2.1.0] User selected NO ^(Do not Compile/Build^). Aborting $(BIN) launch. & \
+			exit /b 0 \
+		) \
+	)
+	@if exist "$(BIN)" ( \
+		echo ============================================================================ & \
+		echo [RUN GAME v2.1.0] Launching $(BIN) with wads\DOOM1.WAD... & \
+		echo ============================================================================ & \
+		.\$(BIN) -iwad .\wads\DOOM1.WAD \
+	)
+
+all-before:
+	@if not exist "$(OBJ_DIR)" mkdir "$(OBJ_DIR)"
+	@if not exist ".ccache\tmp" mkdir ".ccache\tmp"
+	@if not exist ".savegame" mkdir ".savegame"
+	@if not exist "wads" mkdir "wads"
+
+all-after:
+
+clean: clean-custom
+	@cmd /V:ON /C "echo ============================================================================ & echo [CLEAN BUILD v2.1.0] & echo ============================================================================ & set /a DEL_CNT=0 & set /a ERR_CNT=0 & if exist "$(BIN)" (del /F /Q "$(BIN)" 2>nul & if exist "$(BIN)" (echo   - [LOI] Khong the xoa "$(BIN)" ^(Game dang chay?^). & set /a ERR_CNT+=1) else (echo   - [DA XOA] Tep thuc thi "$(BIN)". & set /a DEL_CNT+=1)) & if exist "$(OBJ_DIR)\*.o" (for %%O in ("$(OBJ_DIR)\*.o") do @(del /F /Q "%%~O" 2>nul & if exist "%%~O" (echo   - [LOI] Khong the xoa "%%~nxO" & set /a ERR_CNT+=1) else (set /a DEL_CNT+=1))) & echo   - [HOAN TAT] Da don sach !DEL_CNT! tep bien dich ^(build\*.o ^& $(BIN)^) ^| Loi: !ERR_CNT! & echo ============================================================================"
+
+clean-custom:
+
+# --- 9. Lien ket ---
+$(BIN): $(OBJ)
+	$(LD_CC) $(OBJ) -o $(BIN) $(LIBS)
+
+# --- 10. Bien dich tung file .o ---
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c | all-before
+	$(CC) -c $< -o $@ $(CFLAGS)

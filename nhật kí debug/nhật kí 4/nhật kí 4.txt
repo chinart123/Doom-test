@@ -1,0 +1,44 @@
+# NHẬT KÝ DỰ ÁN: EDU DOOM ASS - LOG #4
+## GIAI ĐOẠN 4: HOÀN THIỆN SCRIPT CÀI ĐẶT TỰ ĐỘNG (setup_env.bat) VÀ XỬ LÝ LỖI HỆ THỐNG
+
+Giai đoạn này đánh dấu việc "đập đi xây lại" các đoạn script giải nén, xử lý triệt để các giới hạn của Windows CMD để tạo ra một file `setup_env.bat` có thể tự động cài đặt từ A-Z mà không cần con người can thiệp.
+
+### 1. LỖI "LZMA CODEC IS UNSUPPORTED" KHI GIẢI NÉN WINLIBS
+**Hiện tượng:** Khi `setup_env.bat` chạy đến phần giải nén Toolchain (WinLibs), màn hình báo lỗi đỏ:
+`tar: LZMA codec is unsupported`
+Kết quả: Thư mục `mingw64` bị tạo ra nhưng rỗng tuếch, không có file `gcc.exe`.
+
+**Nguyên nhân:** Lệnh `tar` có sẵn trên Windows 10 không hỗ trợ thuật toán nén LZMA (định dạng của file `.7z`).
+
+**Cách khắc phục:**
+Viết thêm logic tự động tìm phần mềm **7-Zip** trên máy tính (ở `C:\Program Files\7-Zip\7z.exe`). Nếu tìm thấy, dùng 7-Zip để giải nén; nếu không thấy mới fallback về `tar` (dù biết chắc sẽ lỗi).
+
+### 2. LỖI CMD SẬP NGAY LẬP TỨC DO DẤU NGOẶC ĐƠN (x86)
+**Hiện tượng:** File `.bat` nháy lên rồi tắt, hoặc báo `... was unexpected at this time.` ngay khi vừa chạy đến BƯỚC 1.3.
+
+**Nguyên nhân:** Biến môi trường `%ProgramFiles(x86)%` chứa dấu ngoặc đơn. Khi đặt nó bên trong một khối điều kiện `if (...)` của Batch, CMD bị nhầm lẫn và tưởng dấu ngoặc đơn trong tên biến là dấu đóng khối, làm sập toàn bộ file.
+
+**Cách khắc phục:**
+- Không dùng khối `if (...)` cho phần giải nén WinLibs nữa.
+- Tách phần này ra thành một **Subroutine** (hàm phụ) có nhãn `:EXTRACT_WINLIBS` và dùng lệnh `call` để gọi. Cấu trúc này giúp CMD đọc lệnh tuyến tính, không bị bối rối bởi dấu ngoặc.
+
+### 3. LỖI "BÓNG MA" DO ĐỊNH DẠNG LƯU FILE (ENCODING)
+**Hiện tượng:** File `.bat` chạy nhưng báo một loạt lỗi kỳ quái: 
+`'p' is not recognized...` 
+`'evel-1A' is not recognized...`
+`'771001f4f2e' is not recognized...`
+Mọi chữ cái đầu tiên của các dòng lệnh đều bị "nuốt" mất (chữ `chcp` mất `c` còn `p`, `Level` mất `L` còn `evel`, số `8db...` mất `8` còn `771...`).
+
+**Nguyên nhân:** File `.bat` được lưu bằng định dạng **UTF-8 có BOM** (hoặc UTF-16). Notepad chèn 3 byte vô hình (BOM) vào đầu file. Windows CMD đọc các byte này bị lệch, dẫn đến việc nó đọc sai lệch toàn bộ ký tự đầu tiên của file.
+
+**Cách khắc phục:**
+- Mở file `.bat` bằng Notepad.
+- Chọn **File -> Save As...**
+- Ở mục Encoding (Định dạng), đổi thành **ANSI** (hoặc UTF-8 *without BOM*).
+- Lưu lại. CMD sẽ đọc đúng 100% cấu trúc, và dòng lệnh `chcp 65001` ở đầu vẫn đảm bảo hiển thị tiếng Việt có dấu bình thường.
+
+### 4. TRẠNG THÁI HIỆN TẠI
+- File `setup_env.bat` đã chạy thành công mỹ mãn từ đầu đến cuối.
+- Giải nén chuẩn xác 100% thư mục 64-bit cho cả SDL2, SDL2_mixer và WinLibs.
+- Bộ cài đặt tự động (Tải Kit -> Check SHA256 -> Giải nén -> Sinh tài liệu) đã hoàn thiện.
+- Sẵn sàng cho việc đóng gói phát hành hoặc chuyển sang Nấc tiếp theo (1B - 165Hz).

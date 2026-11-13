@@ -1,0 +1,45 @@
+# NHẬT KÝ DỰ ÁN: EDU DOOM ASS - LOG #3
+## GIAI ĐOẠN 3: BIÊN DỊCH THÀNH CÔNG, SỬA LỖI LINKER VÀ LỖI LẬT NGƯỢC MÀN HÌNH
+
+Giai đoạn này đánh dấu bước ngoặt: Từ mã nguồn C thô, chúng ta đã liên kết thành công ra file `EduDoom-Ass.exe` và chạy thử nghiệm thực tế.
+
+### 1. LỖI "SKIPPING INCOMPATIBLE" KHI LIÊN KẾT (Lỗi 32-bit vs 64-bit)
+**Hiện tượng:** Quá trình biên dịch các file `.o` thành công, nhưng đến bước liên kết (linker `ld.exe`) thì báo lỗi đỏ:
+`skipping incompatible ./third_party/SDL2/lib/libSDL2main.a ... cannot find -lSDL2main`
+
+**Nguyên nhân:** 
+- Trình biên dịch `gcc.exe` của chúng ta là bản 64-bit.
+- Gói nén `SDL2-devel-2.0.20-mingw.tar.gz` chứa **cả 2 thư mục**: `i686-w64-mingw32` (32-bit) và `x86_64-w64-mingw32` (64-bit). 
+- Lệnh `tar --strip-components=2` trong script cũ đã bóc sai thư mục, nhặt nhầm file thư viện 32-bit vứt vào dự án.
+
+**Cách khắc phục:**
+- Xóa thư mục `third_party\SDL2` và `third_party\SDL2_mixer` bị lỗi.
+- Giải nén thủ công (hoặc sửa lệnh tar) để chỉ lấy duy nhất thư mục `x86_64-w64-mingw32` (chứa `bin`, `include`, `lib`).
+- *(Cập nhật code `setup_env.bat` BƯỚC 1.3 để tự động chỉ định đường dẫn `x86_64-w64-mingw32/` thay vì bóc mù quáng).*
+
+### 2. LỖI MÀN HÌNH BỊ LẬT NGƯỢC (OpenGL Upside-Down)
+**Hiện tượng:** Build thành công, file `.exe` chạy, có âm thanh, nhưng toàn bộ hình ảnh game bị lộn ngược từ trên xuống dưới.
+
+**Nguyên nhân:** 
+- OpenGL quy định trục tọa độ Y có gốc `(0,0)` nằm ở **góc dưới bên trái**.
+- Mảng điểm ảnh của DOOM (`DG_ScreenBuffer`) lại được nạp từ **góc trên bên trái**.
+- Khi map tọa độ Texture vào hình chữ nhật Quad, nếu không đảo ngược trục Y, hình sẽ bị lật.
+
+**Cách khắc phục:**
+Sửa lại hàm `drawOpenGLQuad()` trong `doomgeneric_sdl.c`. Đảo ngược tọa độ Y của `glTexCoord2f` (từ `0.0` thành `1.0` và ngược lại):
+```c
+glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f, -1.0f); // Bottom-Left
+    glTexCoord2f(1.0f, 1.0f); glVertex2f( 1.0f, -1.0f); // Bottom-Right
+    glTexCoord2f(1.0f, 0.0f); glVertex2f( 1.0f,  1.0f); // Top-Right
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f,  1.0f); // Top-Left
+glEnd();
+```
+
+### 3. BÀI HỌC VỀ ĐỒNG BỘ MÃ NGUỒN (SYNC)
+- Khi sửa lỗi trực tiếp trong thư mục test, **phải copy ngược file đã sửa về lại repo gốc** (`kit/src/doomgeneric_sdl.c`).
+- Sau khi sửa code trong repo, **phải chạy lại `build_kit.ps1`** để tạo file `.zip` mới.
+- **Bắt buộc phải lấy mã `KIT_SHA256` mới** và cập nhật lại vào `setup_env.bat`. Nếu không cập nhật, khi chạy lại `.bat` sẽ bị báo lỗi sai Hash.
+
+---
+*Trạng thái: Nấc 1A (v2.1.0) đã chính thức hoàn thiện, build thành công, game hiển thị OpenGL xuôi chiều, có âm thanh và bộ lọc F5.*

@@ -1,0 +1,55 @@
+[project]
+name=EduDoom-Ass
+base_path=./
+description=
+file_patterns=*.c;*.h;*.cpp;*.hpp;Makefile;*.win;*.bat;*.md;*.txt;*.toml;*.yml;
+
+[long line marker]
+long_line_behaviour=1
+long_line_column=100
+
+[indentation]
+indent_width=4
+indent_type=0
+indent_hard_tab_width=8
+detect_indent=false
+detect_indent_width=false
+indent_mode=2
+
+[prjorg]
+source_patterns=*.c;*.cpp;
+header_patterns=*.h;*.hpp;
+ignored_dirs_patterns=mingw64;third_party;build;.ccache;.download_cache;.savegame;site_mkdocs;archieve;archive;legacy;
+ignored_file_patterns=*.exe;*.o;*.d;*.a;*.dll;*.wad;*.dsg;
+generate_tag_prefs=0
+external_dirs=
+expanded_paths=E:\\Workspace\\Doom\\v2.1.0-Level-1A\\test\\_tool\\build_kit.ps1;
+show_empty_dirs=true
+
+[build-menu]
+NF_00_LB=_Make
+NF_00_CM="%p\\mingw64\\bin\\mingw32-make.exe" -f "%p\\Custom build Makefile\\Makefile.win" build
+NF_00_WD=%p
+NF_01_LB=Clean Build
+NF_01_CM="%p\\mingw64\\bin\\mingw32-make.exe" -f "%p\\Custom build Makefile\\Makefile.win" clean
+NF_01_WD=%p
+NF_02_LB=Rebuild All
+NF_02_CM="%p\\mingw64\\bin\\mingw32-make.exe" -f "%p\\Custom build Makefile\\Makefile.win" rebuild
+NF_02_WD=%p
+NF_03_LB=Run _Game (EduDoom-Ass.exe)
+NF_03_CM="%p\\mingw64\\bin\\mingw32-make.exe" -f "%p\\Custom build Makefile\\Makefile.win" run
+NF_03_WD=%p
+
+[files]
+current_page=0
+
+[editor]
+line_wrapping=false
+line_break_column=72
+auto_continue_multiline=true
+
+[file_prefs]
+final_new_line=true
+ensure_convert_new_lines=false
+strip_trailing_spaces=false
+replace_tabs=false

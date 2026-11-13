@@ -1,0 +1,19 @@
+E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\build_kit.ps1>dir /b
+.ccache
+.download_cache
+.savegame
+assets
+build
+build_info.txt
+Custom build Makefile
+dir.txt
+doomgeneric-master
+EduDoom-Ass.exe
+EduDoom-Ass.geany
+mingw64
+QUY_DINH_TAI_LIEU.md
+README.md
+setup_env.bat
+third_party
+tree.txt
+wads

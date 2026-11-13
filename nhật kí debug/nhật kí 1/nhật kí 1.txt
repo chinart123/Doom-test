@@ -1,0 +1,42 @@
+# NHẬT KÝ DỰ ÁN: EDU DOOM ASS - LOG #1
+## GIAI ĐOẠN 1: CẢI TỔ SCRIPT TÀI LIỆU VÀ TEST GIAO DIỆN MKDOCS ĐẦU TIÊN
+
+Giai đoạn này tập trung vào việc loại bỏ cơ chế Base64 cũ, viết lại script `install_docs.ps1` để tự động quét tài liệu, và dựng web server cục bộ (Localhost) để kiểm tra.
+
+### 1. CÁC THAY ĐỔI CỐT LÕI TRONG `install_docs.ps1`
+- Xóa bỏ logic giải mã Base64 (`::DOC_B64:`) và không sinh file rác `16_...30_`.
+- Thêm logic copy file `QUY_DINH_TAI_LIEU.md` từ `kit` ra thư mục gốc.
+- Quét các file `NN_*.md` trong `assets\document\` để tự động dựng lại `README.md` (cả bản con và bản gốc).
+- Tự động sinh/vá file `mkdocs.yml` ở thư mục cha (chỉ sửa `docs_dir` và thanh menu `nav`).
+
+### 2. QUY TRÌNH TEST SINH TÀI LIỆU (POWERSHELL)
+**Bối cảnh:** Sử dụng cấu trúc thư mục test hiện tại `E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\install_docs.ps1` để chạy thử script.
+
+**Bước 2.1: Tạo file nội dung mẫu (Gây ra lỗi font lần đầu)**
+Lúc đầu, dùng lệnh sau để tạo file `.md` (lỗi vì không có `-Encoding UTF8`):
+```powershell
+New-Item -ItemType Directory -Force -Path "E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\install_docs.ps1\mkdocs\assets\document" | Out-Null
+Set-Content -Path "E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\install_docs.ps1\mkdocs\assets\document\01_giai_dap.md" -Value "# Giải đáp cơ chế nạp DLL"
+```
+*(Sau đó phát hiện lỗi font chữ, phải sửa lại lệnh có thêm `-Encoding UTF8`)*.
+
+**Bước 2.2: Chạy script sinh tài liệu**
+```powershell
+$env:PROJECT_DIR = "E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\install_docs.ps1\mkdocs"
+$env:KIT_DIR = "E:\Workspace\edudoom-ass-kit\kit"
+powershell -ExecutionPolicy Bypass -File "E:\Workspace\edudoom-ass-kit\kit\scripts\install_docs.ps1"
+```
+*(Bấm `Y` khi được hỏi ghi đè README.md gốc).*
+
+### 3. QUY TRÌNH CHẠY WEB SERVER CỤC BỘ (MKDOCS)
+Sau khi script sinh ra file `mkdocs.yml` ở thư mục cha, tiến hành bật server:
+```powershell
+cd "E:\Workspace\Doom\v2.1.0-Level-1A\test\_tool\install_docs.ps1"
+py -3.12 -m mkdocs serve
+```
+*Truy cập:* `http://127.0.0.1:8000` để xem giao diện web.
+
+### 4. CÁC LỖI ĐÃ GẶP VÀ CÁCH KHẮC PHỤC
+- **Lỗi `UnicodeDecodeError` / Vỡ font tiếng Việt:** Do lệnh `Set-Content` mặc định lưu file bằng bảng mã ANSI. Khắc phục bằng cách thêm cờ `-Encoding UTF8` khi tạo file, và dùng `[System.IO.File]::WriteAllText` trong script PowerShell.
+- **Lỗi menu hiển thị không dấu (Trang chu, Quy dinh tai lieu...):** Do code script cũ hardcode chữ không dấu. Khắc phục bằng cách sửa trực tiếp chuỗi trong script thành `Trang chủ`, `Quy định tài liệu`, `Bản đồ tài liệu`.
+- **Cảnh báo link (`.md` not found):** Do đường dẫn trong README bị sai. Đã sửa code để tự động nhận diện đúng cấp thư mục (`./01_giai_dap.md` cho README con, và `./assets/document/01_giai_dap.md` cho README gốc).

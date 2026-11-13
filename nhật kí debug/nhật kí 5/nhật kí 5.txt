@@ -1,0 +1,59 @@
+# NHẬT KÝ DỰ ÁN: EDU DOOM ASS - LOG #5
+## GIAI ĐOẠN 5: HOÀN THIỆN NẤC 1A (v2.1.0) VÀ THỬ NGHIỆM BỘ LỌC OPENGL
+
+Giai đoạn này đánh dấu sự hoàn thiện trọn vẹn của Nấc 1A, từ việc đồng bộ code, sửa lỗi CMD, cho đến những trải nghiệm thực tế đầu tiên về bộ lọc hình ảnh OpenGL.
+
+### 1. ĐỒNG BỘ MÃ NGUỒN (SYNC)
+- Đã copy file `doomgeneric_sdl.c` (chứa OpenGL, fix lật ngược màn hình và hàm vẽ Quad) từ thư mục test ngược về repo gốc `kit/src/`.
+- Đã kiểm tra `Makefile.win` có sẵn `-lopengl32` và cờ tối ưu `-march=znver3`.
+- Chạy lại `tools/build_kit.ps1` để tạo `kit-v2.1.0.zip` mới và lấy mã SHA256 mới.
+
+### 2. TÍNH NĂNG BỘ LỌC (PHÍM F5) VÀ CẢM NHẬN THỰC TẾ
+- **Chức năng:** Chuyển đổi giữa `GL_NEAREST` (Pixel sắc cạnh) và `GL_LINEAR` (Làm mịn).
+- **Cảm nhận của người dùng:**
+  - *Chế độ Nearest:* Hoài cổ, sắc nét, thấy rõ từng ô vuông pixel.
+  - *Chế độ Linear:* Khi đứng yên cảm thấy hơi "bết" vì mắt phải lấy nét. Nhưng khi di chuyển, tạo ra hiệu ứng Motion Blur tự nhiên, giúp mắt bám theo chuyển động cực tốt, tạo cảm giác tập trung lạ thường.
+
+### 3. THỬ NGHIỆM HẠ ĐỘ PHÂN GIẢI ĐỂ TĂNG ĐỘ NHÒE (VÀ BÀI HỌC XƯƠNG MÁU)
+Để tăng độ nhòe của bộ lọc `GL_LINEAR`, đã tiến hành thử nghiệm hạ độ phân giải render. Dưới đây là chi tiết các thông số đã thay đổi và khôi phục:
+
+**A. THÔNG SỐ MẶC ĐỊNH BAN ĐẦU (Nấc 1A chuẩn)**
+- **File `doomgeneric.h`**: Định nghĩa độ phân giải gốc.
+  ```c
+  #define DOOMGENERIC_RESX 1280
+  #define DOOMGENERIC_RESY 800
+  ```
+- **File `Makefile.win`**: Không truyền cờ độ phân giải, dùng mặc định từ file `.h`.
+- **File `doomgeneric_sdl.c`**: Hàm `DG_Init()` tạo cửa sổ theo biến.
+  ```c
+  SDL_CreateWindow(..., DOOMGENERIC_RESX, DOOMGENERIC_RESY, ...);
+  ```
+
+**B. THÔNG SỐ ĐÃ CHỈNH SỬA (Để test độ nhòe)**
+- **File `Makefile.win`**: Thêm cờ `-D` vào dòng `CFLAGS` để ép độ phân giải render xuống 320x200.
+  ```makefile
+  CFLAGS = $(INCS) -DDOOMGENERIC_RESX=320 -DDOOMGENERIC_RESY=200 -O3 -march=znver3 ...
+  ```
+- **File `doomgeneric_sdl.c`**: Cố định kích thước cửa sổ thành 1280x800 (để tránh lỗi cửa sổ quá nhỏ gây đen màn hình).
+  ```c
+  SDL_CreateWindow(..., 1280, 800, ...);
+  ```
+
+**C. KẾT QUẢ VÀ LỖI GẶP PHẢI**
+- `640x400`: Nhòe nhẹ, vừa mắt.
+- `320x200`: Nhòe kinh hoàng, đúng chuẩn hoài cổ 1993 (đã áp dụng cách sửa cửa sổ ở trên).
+- `160x100` và `200x150`: **THẤT BẠI**. Game bị đen thui khi phóng to. Nguyên nhân do giới hạn toán học dấu phẩy tĩnh của Engine DOOM (BSP bị chia cho 0) và SDL từ chối cấp phát OpenGL Context cho cửa sổ quá nhỏ.
+
+**D. THÔNG SỐ ĐÃ KHÔI PHỤC (Trả về Nấc 1A hoàn thiện)**
+- **File `Makefile.win`**: Xóa cụm `-DDOOMGENERIC_RESX=320 -DDOOMGENERIC_RESY=200`.
+- **File `doomgeneric_sdl.c`**: Trả lại 2 biến cho hàm `SDL_CreateWindow(..., DOOMGENERIC_RESX, DOOMGENERIC_RESY, ...)`.
+- Build lại (F9) để game trở về trạng thái sắc nét 1280x800.
+
+### 4. TRẠNG THÁI NẤC 1A (HOÀN TẤT)
+- [x] Tách base64, cấu trúc Kit.
+- [x] Cấu hình SHA256 bảo mật, tự động giải nén 64-bit (WinLibs, SDL2, Mixer).
+- [x] Sửa lỗi lật ngược màn hình OpenGL.
+- [x] Build thành công ra `EduDoom-Ass.exe`, có âm thanh, có bộ lọc F5.
+- [x] Đã đóng gói `kit-v2.1.0.zip` bản Final.
+
+**Chuẩn bị bước sang Nấc 1B (v2.2.0):** Mở khóa 165Hz (Uncapped FPS) và màn hình rộng (Widescreen).
