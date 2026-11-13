@@ -1,0 +1,89 @@
+# ============================================================
+# v2.1.0-Level-1A — TEST WORKSPACE .gitignore
+# Mục đích: commit log test + config hoạt động, bỏ ảnh & cache & toolchain
+# ============================================================
+
+# ---------- Ảnh / media (nặng, không commit) ----------
+*.png
+*.PNG
+*.jpg
+*.JPG
+*.jpeg
+*.JPEG
+*.gif
+*.GIF
+*.bmp
+*.BMP
+*.webp
+*.WEBP
+*.svg
+*.SVG
+*.ico
+*.ICO
+*.tif
+*.tiff
+*.psd
+*.ai
+*.mp4
+*.mp3
+*.wav
+*.webm
+
+# ---------- Cache & runtime ----------
+.ccache/
+.savegame/
+build/
+build-1a/
+build-1b/
+build-2a/
+
+# ---------- Toolchain & third-party (sinh ra bởi setup_env.bat) ----------
+mingw64/
+third_party/
+wads/
+
+# ---------- .download_cache: chỉ giữ đúng 6 gói cài ----------
+**/.download_cache/*
+!**/.download_cache/DOOM1.WAD
+!**/.download_cache/doomgeneric-master.zip
+!**/.download_cache/kit-v2.1.0.zip
+!**/.download_cache/SDL2-devel-2.0.20-mingw.tar.gz
+!**/.download_cache/SDL2_mixer-devel-2.8.1-mingw.zip
+!**/.download_cache/winlibs-*.7z
+
+# ---------- Custom build Makefile: chỉ giữ Makefile.win ----------
+**/Custom build Makefile/*
+!**/Custom build Makefile/Makefile.win
+
+# ---------- doomgeneric-master: chỉ giữ thư mục con doomgeneric/ ----------
+**/doomgeneric-master/*
+!**/doomgeneric-master/doomgeneric/
+
+# ---------- Build outputs ----------
+*.exe
+*.o
+*.obj
+*.a
+*.dll
+*.so
+*.dylib
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.idb
+
+# ---------- File cụ thể trong build_kit.ps1/ cần bỏ ----------
+test/_tool/build_kit.ps1/QUY_DINH_TAI_LIEU.md
+test/_tool/build_kit.ps1/README.md
+test/_tool/build_kit.ps1/tree.txt
+
+# ---------- OS / IDE rác ----------
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
