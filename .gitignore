@@ -42,6 +42,11 @@ mingw64/
 third_party/
 wads/
 
+# ---------- doomgeneric-master: chỉ giữ thư mục con doomgeneric/ ----------
+**/doomgeneric-master/*
+!**/doomgeneric-master/doomgeneric/
+!**/doomgeneric-master/doomgeneric/**
+
 # ---------- .download_cache: chỉ giữ đúng 6 gói cài ----------
 **/.download_cache/*
 !**/.download_cache/DOOM1.WAD
