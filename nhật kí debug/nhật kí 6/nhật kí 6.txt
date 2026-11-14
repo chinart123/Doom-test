@@ -1,0 +1,44 @@
+# NHẬT KÝ DỰ ÁN: EDU DOOM ASS - LOG #6
+## GIAI ĐOẠN 6: TỐI ƯU HÓA MKDOCS, SỬA LỖI ENCODING FILE .BAT VÀ CẤU HÌNH GIT LFS
+
+Giai đoạn này đánh dấu việc dọn dẹp các lỗi kỹ thuật tồn đọng, tối ưu hóa tốc độ build tài liệu và đưa dự án lên môi trường Git an toàn với các file dung lượng lớn.
+
+### 1. SỬA LỖI MKDOCS "QUÉT RÁC" (Mất 24 giây)
+**Hiện tượng:** Khi chạy `mkdocs serve`, web mất tới 24 giây để load và hiện cảnh báo tìm thấy file `README.md` trong thư mục `mingw64\lib\python3.9\...`.
+**Nguyên nhân:** File `mkdocs.yml` cấu hình `docs_dir: .`, khiến MkDocs quét toàn bộ thư mục dự án, bao gồm cả toolchain MinGW và thư viện bên thứ ba.
+**Cách khắc phục:** 
+- Sửa file `install_docs.ps1` (Phần 6 - Vá mkdocs.yml). Thêm khối `exclude_docs` để tự động chèn vào `mkdocs.yml` mỗi khi sinh tài liệu.
+- Các thư mục bị loại trừ: `mingw64/`, `third_party/`, `build/`, `doomgeneric-master/`, `.ccache/`...
+- **Kết quả:** Thời gian build giảm từ 24s xuống **dưới 1 giây**. Web load tức thì, không còn cảnh báo rác.
+
+### 2. LỖI "BÓNG MA" CỦA FILE .BAT (Batch Encoding)
+**Hiện tượng:** File `setup_env.bat` nháy lên rồi tắt, hoặc báo hàng loạt lỗi vô nghĩa như `'is' is not recognized...`, `'S' is not recognized...`.
+**Nguyên nhân:** Trong file `.bat` có chứa dòng comment tiếng Việt có dấu (ví dụ: `:: SỬ DỤNG ĐƯỜNG DẪN...`). Mặc dù đã lưu bằng ANSI, nhưng CMD đọc các byte ký tự có dấu bị lệch, khiến nó không nhận diện được dấu `::` và cố gắng thực thi phần chữ phía sau.
+**Cách nhận biết lỗi (Mẹo Debug):** 
+Thay vì click đúp chuột vào file `.bat` (khiến màn hình tắt ngay lập tức), hãy **mở CMD**, sau đó **kéo thả file `.bat` vào cửa sổ CMD** và nhấn Enter. Nếu thấy các dòng lỗi kiểu `'S' is not recognized`, `'is' is not recognized`... thì 100% là file đang dính lỗi Encoding (UTF-8 có BOM hoặc có ký tự lạ).
+**Cách khắc phục:** Xóa toàn bộ tiếng Việt có dấu trong file `.bat` (kể cả comment). Chỉ dùng tiếng Anh hoặc tiếng Việt không dấu. Lưu file bằng chuẩn **ANSI** (Notepad++ -> Encoding -> Convert to ANSI).
+
+### 3. FIX CƠ CHẾ "SAFE MODE" CỦA SETUP_ENV.BAT
+**Hiện tượng:** Nén `kit-v2.1.0.zip` mới, nhưng khi chạy `setup_env.bat`, file `install_docs.ps1` bên trong không được cập nhật.
+**Nguyên nhân:** Cơ chế Safe Mode cũ (`if exist manifest.json`) đang bảo vệ nhầm file cấu hình của Developer. `kit-v2.1.0.zip` bắt buộc phải ghi đè khi có bản mới.
+**Cách khắc phục:** Sửa BƯỚC 1.3 trong `setup_env.bat`. Xóa bỏ hoàn toàn khối `if exist manifest.json`. Bây giờ, mỗi lần chạy setup, nó sẽ tự động xóa thư mục `kit-v2.1.0` cũ và giải nén lại file `.zip` mới tinh.
+
+### 4. CẤU HÌNH GIT LFS CHO FILE >100MB
+**Vấn đề:** File `winlibs-*.7z` nặng 188MB, vượt giới hạn 100MB của GitHub. Nếu push trực tiếp sẽ bị lỗi `GH001`.
+**Cách khắc phục:**
+- Chạy `git lfs install`.
+- Track file `.7z`: `git lfs track "**/.download_cache/winlibs-*.7z"`.
+- Commit file `.gitattributes`.
+- Push thành công, kiểm tra bằng `git lfs ls-files` thấy dấu `*`.
+- *(Lưu ý: Hệ thống Billing của GitHub có độ trễ vài giờ đến 24h mới cập nhật dung lượng LFS, nên tạm thời vào Settings -> Billing sẽ thấy hiện 0GB. Không cần lo lắng).*
+
+### 5. HOÀN THIỆN .GITIGNORE CHO NHÁNH TEST
+- Ignore ảnh (`*.png`, `*.jpg`...).
+- Ignore cache, build, toolchain (`mingw64`, `third_party`, `wads`, `.ccache`, `.savegame`, `build`).
+- Tinh chỉnh `.download_cache`: Chỉ giữ 6 file gói cài quan trọng.
+- Tinh chỉnh `doomgeneric-master`: Chỉ giữ thư mục source `doomgeneric/`.
+- Commit `build_info.txt`, `EduDoom-Ass.geany`, `setup_env.bat`, `dir.txt` và các file `nhật kí *.txt`.
+- Ignore `EduDoom-Ass.exe`, `tree.txt` và 2 file rác `README.md`/`QUY_DINH_TAI_LIEU.md` trong thư mục test.
+
+---
+*Trạng thái hiện tại: Repo test đã gọn gàng, tài liệu load dưới 1 giây. Sẵn sàng đóng gói và chuyển sang Nấc 1B (v2.2.0 - Uncapped FPS & Widescreen).*

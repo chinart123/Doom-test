@@ -5,7 +5,6 @@ title EduDoom-Ass v2.1.0 Setup
 
 :: ==========================================================================
 :: [WARNING] Please save this file using ANSI encoding (or UTF-8 without BOM)
-:: to prevent Windows CMD from swallowing the first character of each line.
 :: ==========================================================================
 
 :: ==========================================================================
@@ -13,7 +12,7 @@ title EduDoom-Ass v2.1.0 Setup
 :: ==========================================================================
 set KIT_VERSION=2.1.0
 set KIT_URL=https://github.com/yourusername/edudoom-ass-kit/releases/download/v2.1.0/kit-v2.1.0.zip
-set KIT_SHA256=8db24dd87446d31fa1023c6a99c7c3f87813f89574fc55c145d3a771001f4f
+set KIT_SHA256=1081d8a4004852c8e2efc8bf31046f9395a719cbdd1cccea32007d32c6e2da4e
 
 set "PROJECT_DIR=%~dp0"
 set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
@@ -44,7 +43,7 @@ if exist "%LOCAL_KIT%" (
 echo.
 echo Verifying SHA256...
 set "ACTUAL_HASH="
-for /f "tokens=*" %%H in ('powershell -Command "(Get-FileHash -Path '%CACHE_DIR%\kit-v%KIT_VERSION%.zip' -Algorithm SHA256).Hash.ToLower()"') do set "ACTUAL_HASH=%%H"
+for /f "delims=" %%H in ('powershell -NoProfile -Command "(Get-FileHash -LiteralPath '%CACHE_DIR%\kit-v%KIT_VERSION%.zip' -Algorithm SHA256).Hash.ToLower()"') do set "ACTUAL_HASH=%%H"
 
 if "%ACTUAL_HASH%"=="%KIT_SHA256%" goto :SHA_OK
 
@@ -63,16 +62,12 @@ goto CHECK_SHA
 :SHA_OK
 echo [OK] SHA256 matches!
 
-:: 1.3 Extract Kit (Safe Mode)
-if exist "%CACHE_DIR%\kit-v%KIT_VERSION%\manifest.json" (
-    echo [SKIP] Kit source already exists. Skipping extraction to protect your edits.
-) else (
-    echo Extracting Kit...
-    if exist "%CACHE_DIR%\kit-v%KIT_VERSION%" rmdir /S /Q "%CACHE_DIR%\kit-v%KIT_VERSION%"
-    mkdir "%CACHE_DIR%\kit-v%KIT_VERSION%"
-    tar -xf "%CACHE_DIR%\kit-v%KIT_VERSION%.zip" -C "%CACHE_DIR%\kit-v%KIT_VERSION%"
-    echo [OK] Kit extracted.
-)
+:: 1.3 Extract Kit (Always Overwrite Mode)
+echo Extracting Kit...
+if exist "%CACHE_DIR%\kit-v%KIT_VERSION%" rmdir /S /Q "%CACHE_DIR%\kit-v%KIT_VERSION%"
+mkdir "%CACHE_DIR%\kit-v%KIT_VERSION%"
+tar -xf "%CACHE_DIR%\kit-v%KIT_VERSION%.zip" -C "%CACHE_DIR%\kit-v%KIT_VERSION%"
+echo [OK] Kit extracted.
 
 :: ==========================================================================
 :: STEP 2: EXTRACT DEPENDENCIES - SAFE MODE
@@ -139,7 +134,7 @@ if exist "%CACHE_DIR%\DOOM1.WAD" (
 goto :AFTER_EXTRACT
 
 :: ==========================================================================
-:: SUBROUTINE: EXTRACT WINLIBS (SAFE MODE & ERROR CHECKING)
+:: SUBROUTINE: EXTRACT WINLIBS
 :: ==========================================================================
 :EXTRACT_WINLIBS
 if exist "mingw64\bin\gcc.exe" (
@@ -155,13 +150,13 @@ echo Extracting Toolchain WinLibs...
 if exist "mingw64" rmdir /S /Q "mingw64"
 mkdir "mingw64"
 
-set "SEVEN_ZIP=C:\Program Files\7-Zip\7z.exe"
-if exist "%ProgramFiles%\7-Zip\7z.exe" set "SEVEN_ZIP=%ProgramFiles%\7-Zip\7z.exe"
-if exist "%ProgramFiles(x86)%\7-Zip\7z.exe" set "SEVEN_ZIP=%ProgramFiles(x86)%\7-Zip\7z.exe"
+set "SEVEN_ZIP="
+if exist "C:\Program Files\7-Zip\7z.exe" set "SEVEN_ZIP=C:\Program Files\7-Zip\7z.exe"
+if exist "C:\Program Files (x86)\7-Zip\7z.exe" set "SEVEN_ZIP=C:\Program Files (x86)\7-Zip\7z.exe"
 
-if not exist "!SEVEN_ZIP!" goto :USE_TAR_FALLBACK
+if not defined SEVEN_ZIP goto :USE_TAR_FALLBACK
 
-"!SEVEN_ZIP!" x "!WINLIBS_FILE!" -o"mingw64" -y >nul
+"%SEVEN_ZIP%" x "%WINLIBS_FILE%" -o"mingw64" -y >nul
 if errorlevel 1 (
     echo [WARNING] Some files in WinLibs could not be extracted. They might be in use by another program.
 )
@@ -169,7 +164,7 @@ goto :CLEANUP_WINLIBS
 
 :USE_TAR_FALLBACK
 echo [WARNING] 7-Zip not found. Trying tar...
-tar -xf "!WINLIBS_FILE!" -C "mingw64" >nul 2>&1
+tar -xf "%WINLIBS_FILE%" -C "mingw64" >nul 2>&1
 
 :CLEANUP_WINLIBS
 if exist "mingw64\mingw64\bin\gcc.exe" (
@@ -187,7 +182,7 @@ exit /b
 
 :AFTER_EXTRACT
 :: ==========================================================================
-:: STEP 3: APPLY OVERLAY - SAFE OVERLAY
+:: STEP 3: APPLY OVERLAY - SAFE OVERLAY (Protect user code)
 :: ==========================================================================
 echo.
 echo =======================================================
