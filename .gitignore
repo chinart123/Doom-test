@@ -42,21 +42,9 @@ mingw64/
 third_party/
 wads/
 
-# ---------- doomgeneric-master: chỉ giữ thư mục con doomgeneric/ ----------
-**/doomgeneric-master/*
-!**/doomgeneric-master/doomgeneric/
-!**/doomgeneric-master/doomgeneric/**
-
-
-
-# ---------- .download_cache: chỉ giữ đúng 6 gói cài ----------
+# ---------- .download_cache: Chỉ giữ lại duy nhất file WAD ----------
 **/.download_cache/*
 !**/.download_cache/DOOM1.WAD
-!**/.download_cache/doomgeneric-master.zip
-!**/.download_cache/kit-v2.1.0.zip
-!**/.download_cache/SDL2-devel-2.0.20-mingw.tar.gz
-!**/.download_cache/SDL2_mixer-devel-2.8.1-mingw.zip
-!**/.download_cache/winlibs-*.7z
 
 # ---------- Custom build Makefile: chỉ giữ Makefile.win ----------
 **/Custom build Makefile/*
@@ -65,6 +53,7 @@ wads/
 # ---------- doomgeneric-master: chỉ giữ thư mục con doomgeneric/ ----------
 **/doomgeneric-master/*
 !**/doomgeneric-master/doomgeneric/
+!**/doomgeneric-master/doomgeneric/**
 
 # ---------- Build outputs ----------
 *.exe
@@ -84,8 +73,6 @@ wads/
 test/_tool/build_kit.ps1/QUY_DINH_TAI_LIEU.md
 test/_tool/build_kit.ps1/README.md
 test/_tool/build_kit.ps1/tree.txt
-test/_tool/build_kit.ps1/build_info.txt
-
 
 # ---------- OS / IDE rác ----------
 Thumbs.db
