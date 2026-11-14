@@ -47,6 +47,8 @@ wads/
 !**/doomgeneric-master/doomgeneric/
 !**/doomgeneric-master/doomgeneric/**
 
+
+
 # ---------- .download_cache: chỉ giữ đúng 6 gói cài ----------
 **/.download_cache/*
 !**/.download_cache/DOOM1.WAD
@@ -82,6 +84,8 @@ wads/
 test/_tool/build_kit.ps1/QUY_DINH_TAI_LIEU.md
 test/_tool/build_kit.ps1/README.md
 test/_tool/build_kit.ps1/tree.txt
+test/_tool/build_kit.ps1/build_info.txt
+
 
 # ---------- OS / IDE rác ----------
 Thumbs.db
