@@ -1,0 +1,32 @@
+================================================================================
+EDU DOOM ASS - DIRECTORY TEMPLATE
+================================================================================
+Relative path: %p\Doom-test\v2.1.0-Level-1A\test\_tool\build_kit.ps1>
+
+Legend:
+  [git clone setup] - Available immediately after cloning.
+  [after setup]     - Generated after running setup_env.bat.
+  [results]         - Generated after building (Geany F9).
+
+--------------------------------------------------------------------------------
+ITEM NAME                STATE TAGS                                DESCRIPTION
+--------------------------------------------------------------------------------
+assets/                  [git clone setup] [after setup]           Markdown documentation directory
+build/                   [results]                                 Compiled object files (.o)
+build_info.txt           [git clone setup] [after setup]           Build log and telemetry info
+dir.txt                  [git clone setup]                         Directory structure listing
+EduDoom-Ass.exe          [results]                                 Compiled game executable
+EduDoom-Ass.geany        [git clone setup]                         Geany IDE project config
+QUY_DINH_TAI_LIEU.md     [git clone setup] [after setup]           Documentation rules & guidelines
+README.md                [git clone setup] [after setup]           Project overview and instructions
+setup_env.bat            [git clone setup]                         Automated setup script
+tree.txt                 [git clone setup]                         Full recursive directory listing
+.ccache/                 [after setup] [results]                   Compiler cache for faster rebuilds
+.download_cache/         [after setup]                             Downloaded kit, SDL2, WAD, etc.
+.savegame/               [after setup]                             Doom save games storage
+Custom build Makefile/   [after setup]                             Extracted Makefile.win
+doomgeneric-master/      [after setup]                             Extracted Doom source code
+mingw64/                 [after setup]                             WinLibs 64-bit GCC toolchain
+third_party/             [after setup]                             SDL2 and SDL2_mixer libraries
+wads/                    [after setup]                             Extracted DOOM1.WAD game data
+================================================================================
